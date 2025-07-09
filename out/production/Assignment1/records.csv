@@ -1,0 +1,11 @@
+patientId,Age,Criticality
+1,45,true
+2,34,false
+3,29,true
+4,40,false
+5,51,true
+6,38,false
+7,23,false
+8,60,true
+9,48,true
+10,30,false
