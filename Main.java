@@ -1,33 +1,28 @@
 import Operators.*;
-
-import Operators.ReqdPredicate;
 import table.Table;
-//import predicate.ReqdPredicate;
-import table.Vector;
-
-import CSVReader.CSVReader;
-import java.util.*;
 
 public class Main{
     public static void main(String[] args){
         try{
-            Table patients = CSVReader.readCSV("records.csv");
+            String filepath = "records.csv";
 
-            ReqdPredicate<Integer> ageOver40 = new ReqdPredicate<>("Age", val -> val > 40);
+            String[] projectableColumns = {"patientId", "Age"};
 
-            Operator scan = new Scan(patients);
-            Operator filter = new Filter(scan, ageOver40);
-            Operator sink = new Sink(filter);
+            Operator sink = new Sink(projectableColumns);
+            Filter.ReqdPredicate.Condition ageAbove40 = (table, row) -> table.getColumn("Age").getInt(row) > 40;
+            Filter.ReqdPredicate.Condition IDBelow5 = (table, row) -> table.getColumn("patientId").getInt(row) < 5;
+            Filter.ReqdPredicate predicate = new Filter.ReqdPredicate(ageAbove40, IDBelow5);
+            Operator filter = new Filter(predicate, sink);
+            Operator scan = new Scan(filepath, filter);
 
-            sink.open();
-            while(sink.hasNext()){
-                sink.next();
-            }
-            sink.close();
+
+            scan.open();
         }
         catch(Exception e){
             e.printStackTrace();
         }
+//        Exception e = new Exception();
+//        e.printStackTrace();
     }
 }
 

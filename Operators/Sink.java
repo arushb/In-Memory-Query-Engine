@@ -1,6 +1,13 @@
 package Operators;
 
 import table.Table;
+import table.Vector;
+import table.IntVector;
+import table.DoubleVector;
+import table.FloatVector;
+import table.StringVector;
+import table.longVector;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,51 +20,46 @@ public class Sink implements Operator{
 
     @Override
     public void open(){
+        for(String col : projectableColumns){
+            System.out.print(col + "\t");
+        }
+        System.out.println();
+
 
     }
 
     @Override
-    public boolean consume() {
-        Table projected = table.
-    }
+    public void forward(Table table){
+        Table projected = table.projectColumns(projectableColumns);
+        int rows = projected.getRowCount();
 
-    @Override
-    public Table next() {
-        if(!hasNext()) return null;
-        Table table = child.next();
-        printTable(table);
-        return table;
+
+
+        synchronized (this){
+            for(int i = 0; i < rows; i++){
+                for(String col : projectableColumns){
+                    Vector vector = projected.getColumn(col);
+                    if(vector instanceof IntVector){
+                        System.out.print(((IntVector) vector).getInt(i) + "\t");
+                    }else if(vector instanceof StringVector){
+                        System.out.print(vector.getString(i) + "\t");
+                    }else{
+                        System.out.print("?\t");
+                    }
+                }
+                System.out.println();
+            }
+        }
     }
 
     @Override
     public void close() {
-        child.close();
-        opened = false;
-    }
-
-    private void printTable(Table table){
-        List<String> columnNames = new ArrayList<>(table.getColumnNames());
-        int rowCount = table.getRowCount();
-
-        //headers
-        for(String str : columnNames){
-            System.out.print(str + "\t");
-        }
-
-        //print values
-        System.out.println();
-        for(int i = 0; i < rowCount; i++){
-            for(String str : columnNames){
-                System.out.print(table.getColumn(str).get(i) + "\t");
-            }
-            System.out.println();
-        }
 
     }
-
-    public boolean[] getMask(){
-        return null;
-    }
+//
+//    public boolean[] getMask(){
+//        return null;
+//    }
 
 
 }

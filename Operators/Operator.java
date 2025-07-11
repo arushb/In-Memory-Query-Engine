@@ -4,7 +4,7 @@ import table.Table;
 
 public interface Operator{
     void open();
-    void consume(Table table);
+    void forward(Table table);
     void close();
 
     //gets the mask

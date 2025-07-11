@@ -51,7 +51,7 @@ public class DoubleVector implements Vector {
         throw new UnsupportedOperationException("Not a long vector.");
     }
 
-    public float[] getRaw() {
+    public double[] getRaw() {
         return data;
     }
 }

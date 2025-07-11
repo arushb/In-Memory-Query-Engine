@@ -29,6 +29,19 @@ public class Table{
         return rowCount;
     }
 
+    public Table projectColumns(String[] projectableColumns){
+        Map<String, Vector> projected = new HashMap<>();
+        for(String col : projectableColumns){
+            Vector vector = columns.get(col);
+            if(vector != null){
+                projected.put(col, vector);
+            }else{
+                throw new IllegalArgumentException("Column not found: " + col);
+            }
+        }
+        return new Table(projected);
+    }
+
     public Table select(boolean[] keep) {
         Map<String, Vector> filtered = new HashMap<>();
         for (String col : columns.keySet()) {

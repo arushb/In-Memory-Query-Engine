@@ -5,56 +5,108 @@ import java.util.*;
 
 
 public class Filter implements Operator{
-    private final Operator child;
-    private boolean filterComplete;
+    private final Operator downstream;
+    //private final Table table;
     private final ReqdPredicate predicate;
     private boolean[] keep;
 
-     public Filter(Operator child, ReqdPredicate predicate){  //was ReqdPredicate<T>
-         this.child = child;
-         this.predicate = predicate;
-     }
+    public Filter(ReqdPredicate predicate, Operator downstream){  //was ReqdPredicate<T>
+        this.predicate = predicate;
+        this.downstream = downstream;
+    }
 
     @Override
     public void open(){
-        child.open();
-        filterComplete = false;
+        downstream.open();
     }
 
     @Override
-    public boolean hasNext(){
-        return (!filterComplete && child.hasNext());
-    }
-
-    @Override
-    public Table next(){
-        if(filterComplete) return null;
-        Table table = child.next();
-
-        //noinspection unchecked
-        Vector<?> column = table.getColumn(predicate.getColumnName());
-        int rowCount = column.size();
-
-        keep = new boolean[rowCount];
-        for(int i = 0; i < rowCount; i++){
-            keep[i] = predicate.test(column, i);
-        }
-
-        filterComplete = true;
-        return table.select(keep);
+    public void forward(Table table){
+        keep = predicate.evaluate(table);   // Evaluate conditions in parallel
+        Table filtered = table.select(keep);         // Late materialization using boolean mask
+        downstream.forward(filtered);
 
     }
 
     @Override
     public void close(){
-        child.close();
-        keep = null;
-        filterComplete = true;
+        downstream.close();
     }
 
     @Override
     public boolean[] getMask(){
         return keep;
     }
+
+    public static class ReqdPredicate{
+        private final int numThreads = 16;
+
+        public interface Condition{
+            boolean test(Table table, int row);
+        }
+
+        private final Condition[] conditions;
+
+        public ReqdPredicate(Condition... conditions){
+            this.conditions = conditions;
+
+        }
+
+        public boolean[] evaluate(Table table){
+            int rows = table.getRowCount();
+
+            boolean[] keep = new boolean[rows];
+            Thread[] threads = new Thread[numThreads];
+
+            for(int i = 0; i < rows; i++){
+                keep[i] = true;
+            }
+
+            int chunkSize = rows/numThreads;
+            int extra = rows % numThreads;
+
+            for(int i = 0; i < numThreads; i++){
+                int start = i * chunkSize + Math.min(i, extra);
+                int end = start + chunkSize + (i < extra ? 1 : 0);
+
+                if(start >= end) continue;
+
+                threads[i] = new Thread(new Runnable(){
+                    @Override
+                    public void run(){
+                        for(int j = start; j < end; j++) {
+                            for(Condition condition : conditions){
+                                if(!condition.test(table, j)){
+                                    keep[j] = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
+
+                threads[i].start();
+            }
+
+            for(int i = 0; i < numThreads; i++){
+                if(threads[i] != null){
+                    try{
+                        threads[i].join();
+                    }catch(InterruptedException e){
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+
+            return keep;
+
+
+
+
+        }
+
+    }
+
+
 
 }

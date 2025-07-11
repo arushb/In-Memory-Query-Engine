@@ -25,22 +25,22 @@ public class IntVector implements Vector {
     }
 
     @Override
-    public int getInt(int index) {
+    public int getInt(int index){
         return data[index];
     }
 
     @Override
-    public float getFloat(int index) {
+    public float getFloat(int index){
         throw new UnsupportedOperationException("Not a float vector.");
     }
 
     @Override
-    public double getDouble(int index) {
+    public double getDouble(int index){
         throw new UnsupportedOperationException("Not a double vector.");
     }
 
     @Override
-    public String getString(int index) {
+    public String getString(int index){
         throw new UnsupportedOperationException("Not a String vector.");
     }
 
